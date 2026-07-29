@@ -3,7 +3,7 @@ name: Build
 # 觸發時機，當推送到分支 master 時
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 # 執行的工作
 jobs:
   # 工作名稱
@@ -34,7 +34,4 @@ jobs:
         with:
           branch: build
           folder: deploy
-      # 步驟五：呼叫 render 部署
-      - name: Deploy
-        run: |
-          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+          single-commit: true
