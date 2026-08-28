@@ -117,3 +117,30 @@ export const getId = async (req: Request, res: Response) => {
     result,
   })
 }
+
+export const remove = async (req: Request, res: Response) => {
+  const paramsSchema = yup.object({
+    id: yup
+      .string()
+      .typeError('資料格式錯誤')
+      .required('ID 必填')
+      .trim()
+      .test('isMongoId', '資料格式錯誤', (value) => validator.isMongoId(value)),
+  })
+  const parsedParams = await paramsSchema.validate(req.params, { stripUnknown: true })
+
+  const result = await Product.findByIdAndDelete(parsedParams.id).orFail(
+    new Error('PRODUCT NOT FOUND'),
+  )
+
+  if (result.image) {
+    await cloudinary.uploader.destroy(result.image)
+  }
+
+  res.status(StatusCodes.OK).json({
+    success: true,
+    message: '',
+    result: {},
+  })
+}
+

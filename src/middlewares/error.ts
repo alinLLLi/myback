@@ -79,6 +79,12 @@ export default async (error: unknown, req: Request, res: Response, _next: NextFu
           message: '找不到商品',
         })
         break
+      case 'KNOWLEDGE NOT FOUND':
+        res.status(StatusCodes.NOT_FOUND).json({
+          success: false,
+          message: '找不到災防知識',
+        })
+        break
       case 'CART EMPTY':
         res.status(StatusCodes.NOT_FOUND).json({
           success: false,

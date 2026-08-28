@@ -68,3 +68,55 @@ export const getCart = async (req: Request, res: Response) => {
     result: user!.cart,
   })
 }
+
+export const getProfile = async (req: Request, res: Response) => {
+  res.status(StatusCodes.OK).json({
+    success: true,
+    message: '',
+    result: {
+      account: req.user!.account,
+      role: req.user!.role,
+      cart: req.user!.cart.length,
+    },
+  })
+}
+
+export const updateProfile = async (req: Request, res: Response) => {
+  const schema = yup.object({
+    account: yup
+      .string()
+      .typeError('資料格式錯誤')
+      .min(4, '帳號必需是 4 個字以上')
+      .max(20, '帳號必需是 20 個字以下')
+      .test('isAlphanumeric', '帳號只能是英數字', (value) => !value || validator.isAlphanumeric(value)),
+    password: yup
+      .string()
+      .typeError('資料格式錯誤')
+      .min(4, '密碼最少 4 個字')
+      .max(20, '密碼最長 20 個字'),
+    role: yup.string().oneOf(['user', 'admin']),
+  })
+  const parsedBody = await schema.validate(req.body, { stripUnknown: true })
+
+  if (parsedBody.account) {
+    req.user!.account = parsedBody.account
+  }
+  if (parsedBody.password) {
+    req.user!.password = parsedBody.password
+  }
+  if (parsedBody.role) {
+    req.user!.role = parsedBody.role as 'user' | 'admin'
+  }
+
+  await req.user!.save()
+
+  res.status(StatusCodes.OK).json({
+    success: true,
+    message: '',
+    result: {
+      account: req.user!.account,
+      role: req.user!.role,
+    },
+  })
+}
+

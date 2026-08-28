@@ -25,6 +25,7 @@ export const register = async (req: Request, res: Response) => {
       .required('密碼必填')
       .min(4, '密碼最少 4 個字')
       .max(20, '密碼最長 20 個字'),
+    role: yup.string().oneOf(['user', 'admin']).default('user'),
   })
   const parsedBody = await schema.validate(req.body, { stripUnknown: true })
 

@@ -24,5 +24,6 @@ router.patch(
 router.get('/', controllerProduct.get)
 router.get('/all', middlewareAuth.jwt, middlewareAuth.admin, controllerProduct.getAll)
 router.get('/:id', controllerProduct.getId)
+router.delete('/:id', middlewareAuth.jwt, middlewareAuth.admin, controllerProduct.remove)
 
 export default router

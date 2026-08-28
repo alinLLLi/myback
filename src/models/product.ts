@@ -1,9 +1,9 @@
 import { Schema, model, type HydratedDocument } from 'mongoose'
 import cloudinary from '../configs/cloudinary'
 
-export const categoryOptions = ['3C', '食品', '衣服']
+export const categoryOptions = ['避難食物', '生活用品', '外套服飾', '防身用品']
 
-export type TCategoryOptions = '3C' | '食品' | '衣服'
+export type TCategoryOptions = '避難食物' | '生活用品' | '外套服飾' | '防身用品'
 
 export interface IProduct {
   name: string
