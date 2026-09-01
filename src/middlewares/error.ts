@@ -8,6 +8,11 @@ import cloudinary from '../configs/cloudinary'
 export default async (error: unknown, req: Request, res: Response, _next: NextFunction) => {
   console.error(error)
 
+  // 僅對非預期的系統錯誤印出完整 log-新增
+  if (!(error instanceof Error && ['RT', 'LOGIN', 'TOKEN'].includes(error.message))) {
+    console.error(error)
+  }
+
   // 如果有錯誤，刪除已上傳的圖片
   if (req.file) {
     await cloudinary.uploader.destroy(req.file.filename)
