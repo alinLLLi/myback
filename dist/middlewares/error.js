@@ -43,6 +43,10 @@ const mongodb_1 = require("mongodb");
 const cloudinary_1 = __importDefault(require("../configs/cloudinary"));
 exports.default = async (error, req, res, _next) => {
     console.error(error);
+    // 僅對非預期的系統錯誤印出完整 log-新增
+    if (!(error instanceof Error && ['RT', 'LOGIN', 'TOKEN'].includes(error.message))) {
+        console.error(error);
+    }
     // 如果有錯誤，刪除已上傳的圖片
     if (req.file) {
         await cloudinary_1.default.uploader.destroy(req.file.filename);
