@@ -6,9 +6,7 @@ import { MongoServerError } from 'mongodb'
 import cloudinary from '../configs/cloudinary'
 
 export default async (error: unknown, req: Request, res: Response, _next: NextFunction) => {
-  console.error(error)
-
-  // 僅對非預期的系統錯誤印出完整 log-新增
+  // 僅對非預期的系統錯誤印出完整 log（過濾預期的 LOGIN, TOKEN, RT 驗證錯誤）
   if (!(error instanceof Error && ['RT', 'LOGIN', 'TOKEN'].includes(error.message))) {
     console.error(error)
   }

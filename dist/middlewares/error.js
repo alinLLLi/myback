@@ -42,8 +42,7 @@ const mongoose_1 = require("mongoose");
 const mongodb_1 = require("mongodb");
 const cloudinary_1 = __importDefault(require("../configs/cloudinary"));
 exports.default = async (error, req, res, _next) => {
-    console.error(error);
-    // 僅對非預期的系統錯誤印出完整 log-新增
+    // 僅對非預期的系統錯誤印出完整 log（過濾預期的 LOGIN, TOKEN, RT 驗證錯誤）
     if (!(error instanceof Error && ['RT', 'LOGIN', 'TOKEN'].includes(error.message))) {
         console.error(error);
     }
