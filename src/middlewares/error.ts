@@ -6,8 +6,12 @@ import { MongoServerError } from 'mongodb'
 import cloudinary from '../configs/cloudinary'
 
 export default async (error: unknown, req: Request, res: Response, _next: NextFunction) => {
-  // 僅對非預期的系統錯誤印出完整 log（過濾預期的 LOGIN, TOKEN, RT 驗證錯誤）
-  if (!(error instanceof Error && ['RT', 'LOGIN', 'TOKEN'].includes(error.message))) {
+  // 僅對非預期的系統錯誤印出完整 log（過濾 yup 驗證錯誤與預期的 LOGIN, TOKEN, RT 驗證錯誤）
+  const isExpectedError =
+    error instanceof yup.ValidationError ||
+    (error instanceof Error && ['RT', 'LOGIN', 'TOKEN'].includes(error.message))
+
+  if (!isExpectedError) {
     console.error(error)
   }
 
@@ -25,6 +29,15 @@ export default async (error: unknown, req: Request, res: Response, _next: NextFu
   }
   // yup 驗證錯誤
   else if (error instanceof yup.ValidationError) {
+    console.error(`\n❌ [Yup 驗證失敗]`)
+    console.error(`  - 請求路徑: ${req.method} ${req.originalUrl}`)
+    console.error(`  - 失敗欄位: ${error.path || '(未指定欄位)'}`)
+    console.error(`  - 錯誤訊息: ${error.message}`)
+    console.error(`  - 傳入 Params:`, req.params)
+    console.error(`  - 傳入 Body:`, req.body)
+    console.error(`  - 傳入 Query:`, req.query)
+    console.error('')
+
     res.status(StatusCodes.BAD_REQUEST).json({
       success: false,
       message: error.message,

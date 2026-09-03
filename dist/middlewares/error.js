@@ -42,8 +42,10 @@ const mongoose_1 = require("mongoose");
 const mongodb_1 = require("mongodb");
 const cloudinary_1 = __importDefault(require("../configs/cloudinary"));
 exports.default = async (error, req, res, _next) => {
-    // 僅對非預期的系統錯誤印出完整 log（過濾預期的 LOGIN, TOKEN, RT 驗證錯誤）
-    if (!(error instanceof Error && ['RT', 'LOGIN', 'TOKEN'].includes(error.message))) {
+    // 僅對非預期的系統錯誤印出完整 log（過濾 yup 驗證錯誤與預期的 LOGIN, TOKEN, RT 驗證錯誤）
+    const isExpectedError = error instanceof yup.ValidationError ||
+        (error instanceof Error && ['RT', 'LOGIN', 'TOKEN'].includes(error.message));
+    if (!isExpectedError) {
         console.error(error);
     }
     // 如果有錯誤，刪除已上傳的圖片
@@ -59,6 +61,14 @@ exports.default = async (error, req, res, _next) => {
     }
     // yup 驗證錯誤
     else if (error instanceof yup.ValidationError) {
+        console.error(`\n❌ [Yup 驗證失敗]`);
+        console.error(`  - 請求路徑: ${req.method} ${req.originalUrl}`);
+        console.error(`  - 失敗欄位: ${error.path || '(未指定欄位)'}`);
+        console.error(`  - 錯誤訊息: ${error.message}`);
+        console.error(`  - 傳入 Params:`, req.params);
+        console.error(`  - 傳入 Body:`, req.body);
+        console.error(`  - 傳入 Query:`, req.query);
+        console.error('');
         res.status(http_status_codes_1.StatusCodes.BAD_REQUEST).json({
             success: false,
             message: error.message,
