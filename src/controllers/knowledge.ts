@@ -123,8 +123,9 @@ export const getAll = async (req: Request, res: Response) => {
   })
 }
 
+// 改為以 updatedAt 或 createdAt 排序
 export const get = async (req: Request, res: Response) => {
-  const result = await Knowledge.find({ published: true }).sort({ createdAt: -1 })
+  const result = await Knowledge.find({ published: true }).sort({ updatedAt: -1 })
   res.status(StatusCodes.OK).json({
     success: true,
     message: '',
