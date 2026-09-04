@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express'
-import Knowledge, { IKnowledge } from '../models/knowledge'
+import Knowledge, { categoryOptions, IKnowledge } from '../models/knowledge'
 import * as yup from 'yup'
 import validator from 'validator'
 import { StatusCodes } from 'http-status-codes'
@@ -8,14 +8,25 @@ import cloudinary from '../configs/cloudinary'
 export const create = async (req: Request, res: Response) => {
   const schema = yup.object<IKnowledge>({
     title: yup.string().typeError('資料格式錯誤').required('標題必填'),
+    category: yup
+      .string()
+      .typeError('資料格式錯誤')
+      .required('分類必填')
+      .oneOf([...categoryOptions], '分類錯誤'),
     description: yup.string().typeError('資料格式錯誤').required('說明必填'),
+    published: yup.boolean().typeError('資料格式錯誤').required('發布狀態必填'),
     image: yup.string().typeError('資料格式錯誤').required('圖片必填'),
   })
 
-  const parsedBody = await schema.validate(
-    { ...req.body, image: req.file?.filename },
-    { stripUnknown: true },
-  )
+  const bodyData = {
+    ...req.body,
+    category: req.body.category || '地震防護',
+    description: req.body.description || req.body.summary,
+    published: req.body.published !== undefined ? req.body.published : true,
+    image: req.file?.filename,
+  }
+
+  const parsedBody = await schema.validate(bodyData, { stripUnknown: true })
 
   const result = await Knowledge.create(parsedBody)
 
@@ -39,9 +50,23 @@ export const update = async (req: Request, res: Response) => {
 
   const bodySchema = yup.object<IKnowledge>({
     title: yup.string().typeError('資料格式錯誤').required('標題必填'),
+    category: yup
+      .string()
+      .typeError('資料格式錯誤')
+      .required('分類必填')
+      .oneOf([...categoryOptions], '分類錯誤'),
     description: yup.string().typeError('資料格式錯誤').required('說明必填'),
+    published: yup.boolean().typeError('資料格式錯誤').required('發布狀態必填'),
   })
-  const parsedBody = await bodySchema.validate(req.body, { stripUnknown: true })
+
+  const bodyData = {
+    ...req.body,
+    category: req.body.category || '地震防護',
+    description: req.body.description || req.body.summary,
+    published: req.body.published !== undefined ? req.body.published : true,
+  }
+
+  const parsedBody = await bodySchema.validate(bodyData, { stripUnknown: true })
 
   const result = await Knowledge.findByIdAndUpdate(parsedParams.id, parsedBody, {
     returnDocument: 'after',
@@ -49,7 +74,9 @@ export const update = async (req: Request, res: Response) => {
   }).orFail(new Error('KNOWLEDGE NOT FOUND'))
 
   if (req.file) {
-    await cloudinary.uploader.destroy(result.image)
+    if (result.image && !result.image.startsWith('http')) {
+      await cloudinary.uploader.destroy(result.image)
+    }
     result.image = req.file.filename
     await result.save()
   }
@@ -76,7 +103,7 @@ export const remove = async (req: Request, res: Response) => {
     new Error('KNOWLEDGE NOT FOUND'),
   )
 
-  if (result.image) {
+  if (result.image && !result.image.startsWith('http')) {
     await cloudinary.uploader.destroy(result.image)
   }
 
@@ -88,7 +115,7 @@ export const remove = async (req: Request, res: Response) => {
 }
 
 export const getAll = async (req: Request, res: Response) => {
-  const result = await Knowledge.find()
+  const result = await Knowledge.find().sort({ createdAt: -1 })
   res.status(StatusCodes.OK).json({
     success: true,
     message: '',
@@ -97,7 +124,7 @@ export const getAll = async (req: Request, res: Response) => {
 }
 
 export const get = async (req: Request, res: Response) => {
-  const result = await Knowledge.find()
+  const result = await Knowledge.find({ published: true }).sort({ createdAt: -1 })
   res.status(StatusCodes.OK).json({
     success: true,
     message: '',

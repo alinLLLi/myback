@@ -37,7 +37,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getId = exports.get = exports.getAll = exports.remove = exports.update = exports.create = void 0;
-const knowledge_1 = __importDefault(require("../models/knowledge"));
+const knowledge_1 = __importStar(require("../models/knowledge"));
 const yup = __importStar(require("yup"));
 const validator_1 = __importDefault(require("validator"));
 const http_status_codes_1 = require("http-status-codes");
@@ -45,10 +45,23 @@ const cloudinary_1 = __importDefault(require("../configs/cloudinary"));
 const create = async (req, res) => {
     const schema = yup.object({
         title: yup.string().typeError('資料格式錯誤').required('標題必填'),
+        category: yup
+            .string()
+            .typeError('資料格式錯誤')
+            .required('分類必填')
+            .oneOf([...knowledge_1.categoryOptions], '分類錯誤'),
         description: yup.string().typeError('資料格式錯誤').required('說明必填'),
+        published: yup.boolean().typeError('資料格式錯誤').required('發布狀態必填'),
         image: yup.string().typeError('資料格式錯誤').required('圖片必填'),
     });
-    const parsedBody = await schema.validate({ ...req.body, image: req.file?.filename }, { stripUnknown: true });
+    const bodyData = {
+        ...req.body,
+        category: req.body.category || '地震防護',
+        description: req.body.description || req.body.summary,
+        published: req.body.published !== undefined ? req.body.published : true,
+        image: req.file?.filename,
+    };
+    const parsedBody = await schema.validate(bodyData, { stripUnknown: true });
     const result = await knowledge_1.default.create(parsedBody);
     res.status(http_status_codes_1.StatusCodes.CREATED).json({
         success: true,
@@ -69,15 +82,29 @@ const update = async (req, res) => {
     const parsedParams = await paramsSchema.validate(req.params, { stripUnknown: true });
     const bodySchema = yup.object({
         title: yup.string().typeError('資料格式錯誤').required('標題必填'),
+        category: yup
+            .string()
+            .typeError('資料格式錯誤')
+            .required('分類必填')
+            .oneOf([...knowledge_1.categoryOptions], '分類錯誤'),
         description: yup.string().typeError('資料格式錯誤').required('說明必填'),
+        published: yup.boolean().typeError('資料格式錯誤').required('發布狀態必填'),
     });
-    const parsedBody = await bodySchema.validate(req.body, { stripUnknown: true });
+    const bodyData = {
+        ...req.body,
+        category: req.body.category || '地震防護',
+        description: req.body.description || req.body.summary,
+        published: req.body.published !== undefined ? req.body.published : true,
+    };
+    const parsedBody = await bodySchema.validate(bodyData, { stripUnknown: true });
     const result = await knowledge_1.default.findByIdAndUpdate(parsedParams.id, parsedBody, {
         returnDocument: 'after',
         runValidators: true,
     }).orFail(new Error('KNOWLEDGE NOT FOUND'));
     if (req.file) {
-        await cloudinary_1.default.uploader.destroy(result.image);
+        if (result.image && !result.image.startsWith('http')) {
+            await cloudinary_1.default.uploader.destroy(result.image);
+        }
         result.image = req.file.filename;
         await result.save();
     }
@@ -99,7 +126,7 @@ const remove = async (req, res) => {
     });
     const parsedParams = await paramsSchema.validate(req.params, { stripUnknown: true });
     const result = await knowledge_1.default.findByIdAndDelete(parsedParams.id).orFail(new Error('KNOWLEDGE NOT FOUND'));
-    if (result.image) {
+    if (result.image && !result.image.startsWith('http')) {
         await cloudinary_1.default.uploader.destroy(result.image);
     }
     res.status(http_status_codes_1.StatusCodes.OK).json({
@@ -110,7 +137,7 @@ const remove = async (req, res) => {
 };
 exports.remove = remove;
 const getAll = async (req, res) => {
-    const result = await knowledge_1.default.find();
+    const result = await knowledge_1.default.find().sort({ createdAt: -1 });
     res.status(http_status_codes_1.StatusCodes.OK).json({
         success: true,
         message: '',
@@ -119,7 +146,7 @@ const getAll = async (req, res) => {
 };
 exports.getAll = getAll;
 const get = async (req, res) => {
-    const result = await knowledge_1.default.find();
+    const result = await knowledge_1.default.find({ published: { $ne: false } }).sort({ createdAt: -1 });
     res.status(http_status_codes_1.StatusCodes.OK).json({
         success: true,
         message: '',
