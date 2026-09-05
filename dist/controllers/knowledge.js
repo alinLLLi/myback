@@ -145,8 +145,9 @@ const getAll = async (req, res) => {
     });
 };
 exports.getAll = getAll;
+// 改為以 updatedAt 或 createdAt 排序
 const get = async (req, res) => {
-    const result = await knowledge_1.default.find({ published: { $ne: false } }).sort({ createdAt: -1 });
+    const result = await knowledge_1.default.find({ published: true }).sort({ updatedAt: -1 });
     res.status(http_status_codes_1.StatusCodes.OK).json({
         success: true,
         message: '',
